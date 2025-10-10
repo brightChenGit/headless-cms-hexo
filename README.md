@@ -11,18 +11,18 @@
 ```mermaid
 sequenceDiagram
    participant 用户
-   participant 前端cms-frontend
-   participant 后端cms-backend
-   用户->>前端cms-frontend:1.首页设置<br/>（后端地址+后端token<br/>，可自定义git地址<br/>替换后端默认）
-   前端cms-frontend->>后端cms-backend:2.验证token<br/> n次失败禁用5分钟<br/>m次失败禁用<br/>重启后端重新计数
-   用户->>前端cms-frontend:3.列表查询文章<br/>（自动携带git地址<br/>替换后端默认）<br/>前端进行分页和模糊查询
-   前端cms-frontend->>后端cms-backend:4.从缓存读取所有文章数据<br/>（j分钟同步git拉取一次）
-   用户->>前端cms-frontend:5.保存文章
-   前端cms-frontend->>后端cms-backend:6:创建目录<br/>创建本地文章，<br/>推送到git
-   用户->>前端cms-frontend:7.删除文章
-   前端cms-frontend->>后端cms-backend:8.删除本地文章，<br/>推送到git
-   用户->>前端cms-frontend:9.部署
-   前端cms-frontend->>后端cms-backend:10.触发hexo generator生成hexo文章，<br/>映射public目录到宿主机中，<br/>宿主机nginx访问public目录下的hexo文章
+   participant 前端
+   participant 后端
+   用户->>前端:1.首页设置<br/>（后端地址+后端token<br/>，可自定义git地址<br/>替换后端默认）
+   前端->>后端:2.验证token<br/> n次失败禁用5分钟<br/>m次失败禁用<br/>重启后端重新计数
+   用户->>前端:3.列表查询文章<br/>（自动携带git地址<br/>替换后端默认）<br/>前端进行分页和模糊查询
+   前端->>后端:4.从缓存读取所有文章数据<br/>（j分钟同步git拉取一次）
+   用户->>前端:5.保存文章
+   前端->>后端:6:创建目录<br/>创建本地文章，<br/>推送到git
+   用户->>前端:7.删除文章
+   前端->>后端:8.删除本地文章，<br/>推送到git
+   用户->>前端:9.部署
+   前端->>后端:10.触发hexo generator生成hexo文章，<br/>映射public目录到宿主机中，<br/>宿主机nginx访问public目录下的hexo文章
 ```
 
 
