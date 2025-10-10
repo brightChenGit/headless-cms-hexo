@@ -12,7 +12,17 @@ bin-release/
 *.air
 *.ipa
 *.apk
+.idea
+.vscode/
+out/
+repos/
+cms-backend/docker-compose.yml
+cms-backend/.venv/
+dist/
+node_modules/
 
+id_rsa_hexo
+id_rsa_hexo.pub
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.

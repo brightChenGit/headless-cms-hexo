@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  cms-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cms-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    # 可选：设置环境变量（注意：Vite 构建时才生效，运行时无效）
+    # environment:
+    #   - NODE_ENV=production
