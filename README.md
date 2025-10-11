@@ -40,12 +40,18 @@ sequenceDiagram
 ## 4.安装教程
 
 
-### 4.1 后端cms-backend部署
+### 4.1 后端cms-backend部署 (http://localhost:3001)
 
 #### 4.1.1 前提概要
-* 配置token，hexo的git仓库地址和对应的分支
+* **配置token，hexo的git仓库地址和对应的分支**
 
-* docker-compose.yml可以参考docker-compose-temp.yml
+* **docker-compose.yml可以参考docker-compose-temp.yml**
+
+* **docker中docker-compose时设置的环境变量优先于config.py设置的**
+
+* **可以使用token_generator.py生成随机的token参数然后再复制过去配置token**
+
+* **注意 /usr/repos:/app/repos中的/usr/repos为hexo项目挂载地址**
 
 1.在config.py配置
 ```angular2html
@@ -65,11 +71,8 @@ SECRET_TOKEN = os.getenv("ACCESS_TOKEN", "自定义token")
 
 ```
 
-3.ps：
 
-1.docker中docker-compose时设置的环境变量优先于config.py设置的
 
-2.可以使用token_generator.py生成随机的token参数然后再复制过去配置token
 
 #### 4.1.2 dev使用
 
@@ -114,7 +117,7 @@ ssh -T git@giteee.com
 ```
 
 
-### 4.2 前端 cms-frontend
+### 4.2 前端 cms-frontend(http://localhost:3000)
 
 
 
@@ -143,15 +146,15 @@ docker-compose up --build -d
 ### 5.1 总体概述
 1. 前端可以指定后端地址及固定token，修改hexo的git地址
 2. 后端可以本地运行及配置hexo的git地址，固定token，对前端请求做token校验，固定token认证，同ip n次错误临时封禁5分钟，m次错误永久封禁（内存/redis实现）
-3. 在服务器本地维护一份 Hexo 源码仓库（含 `_posts` 目录）
-4. 使用 gitpython 执行 Git 操作
+3. 在服务器本地维护一份 Hexo 源码仓库
+4. 使用` gitpython`执行 Git 操作
 5. 在通过 Token 验证后，异步拉取最新 Git 代码并执行 `npm install`、`hexo clean`、`hexo generate` 完成 Hexo 博客自动构建，确保每次构建基于最新内容。
 
-### 5.2 设计前端
+### 5.2 前端设计
 首页，文章列表页，文章编辑页面，固定菜单栏在页面上方
 1. 首页进行git地址，分支自定义读取展示和设置，前端自定义配置后端地址
-2. 文章列表页面，展示文章列表，上部分为文章标题搜索框，查询按钮，新增文章按钮，文章列表具有编辑，删除按钮。
-3. 文章编辑页面，支持文章读取到bytemd这个富文本编辑器，有保存按钮
+2. 文章列表页面，展示文章列表，上部分为文章标题搜索框，查询按钮，新增文章按钮，部署按钮，文章列表具有编辑，删除按钮。
+3. 文章编辑页面，支持文章读取到`bytemd`这个富文本编辑器，有保存按钮
 
 
 ## 6.未来可扩展方向

@@ -12,7 +12,7 @@ services:
       # 挂载 SSH 私钥（必须！） 自定义私钥为名为 id_rsa_hexo  :ro 只读
       - ./ssh/id_rsa_hexo:/root/.ssh/id_rsa_hexo:ro
       # 挂载hexo项目
-      - /usr/repos:/usr/repos
+      - /usr/repos:/app/repos
     environment:
       #  时区（可选，覆盖默认 Asia/Shanghai）
       - TZ=Asia/Shanghai
