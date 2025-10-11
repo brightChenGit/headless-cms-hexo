@@ -1,4 +1,5 @@
 # git_utils.py
+import traceback
 
 import git
 import os
@@ -55,8 +56,25 @@ def git_pull(repo_url: str, branch: str = "main") -> dict:
         for info in result:
             print(f"Pull: {info}")
         return {"status": "pulled"}
+    except git.exc.GitCommandError as e:
+        # 👇 这是最关键的：Git 命令本身的错误（stderr）
+        error_detail = (
+            f"Git 命令执行失败:\n"
+            f"  命令: {e.command}\n"
+            f"  返回码: {e.status}\n"
+            f"  标准输出: {e.stdout}\n"
+            f"  标准错误: {e.stderr}\n"
+            f"  完整异常: {str(e)}"
+        )
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=f"Git 拉取失败: {e.stderr or str(e)}")
+
     except Exception as e:
-        raise HTTPException(500, detail=f"拉取失败: {str(e)}")
+        # 捕获其他异常（如文件不存在、权限问题等）
+        full_trace = traceback.format_exc()
+        print(f"❌ 未知错误:\n{full_trace}")
+        raise HTTPException(status_code=500, detail=f"拉取失败: {str(e)} (详见日志)")
+
 
 def git_commit_and_push(repo_url: str, branch: str = "main", message: str = None) -> dict:
     """提交并推送"""
