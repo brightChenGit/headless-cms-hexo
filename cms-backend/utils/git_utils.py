@@ -31,19 +31,38 @@ def ensure_repo_cloned(repo_url: str, branch: str = "main") -> str:
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir, exist_ok=True)
 
-    # 如果仓库目录不存在，克隆
+    # 判断是否需要克隆：目录不存在 或 存在但不是有效 Git 仓库
+    should_clone = False
     if not os.path.exists(repo_path):
-        print(f"📁 仓库未克隆，正在克隆 {repo_url} 到 {repo_path}")
-        os.makedirs(repo_path, exist_ok=True)
+        should_clone = True
+    else:
+        # 目录存在，检查是否是有效 Git 仓库
+        try:
+            git.Repo(repo_path)
+            print(f"🔁 仓库已存在: {repo_path}")
+        except git.exc.InvalidGitRepositoryError:
+            print(f"⚠️ 路径存在但不是 Git 仓库（可能是空目录）: {repo_path}")
+            should_clone = True
+        except Exception:
+            # 其他异常（如权限问题）也视为无效，尝试重新克隆
+            should_clone = True
+
+    if should_clone:
+        print(f"📁 仓库未克隆或无效，正在克隆 {repo_url} 到 {repo_path}")
+        # 删除残留目录（如果是无效的）
+        if os.path.exists(repo_path):
+            import shutil
+            shutil.rmtree(repo_path)
         try:
             git.Repo.clone_from(repo_url, repo_path, branch=branch)
             print(f"✅ 克隆成功")
         except git.exc.GitCommandError as e:
             raise HTTPException(500, detail=f"克隆失败: {str(e)}")
-    else:
-        print(f"🔁 仓库已存在: {repo_path}")
 
     return repo_path
+
+
+
 
 def git_pull(repo_url: str, branch: str = "main") -> dict:
     """拉取指定仓库"""

@@ -1,4 +1,5 @@
 # routers/webhook.py
+
 import threading
 
 from fastapi import APIRouter, Request, HTTPException,Depends,Query
@@ -8,7 +9,7 @@ from configs.config import current_repo  # 复用已有的全局仓库配置
 from utils.git_utils import git_pull
 from utils.token_utils import verify_token  # 复用 Token 校验
 from loguru import logger
-
+from datetime import datetime
 from utils.webhook_utils import HexoBuilder
 
 router = APIRouter(prefix="/webhookHexo", tags=["WebhookHexo"])
@@ -60,7 +61,7 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
     try:
         logger.info("🔄 正在拉取最新代码...")
         git_pull(repo_url, branch)
-        _update_status("git_pull", "success", "Git 拉取成功")
+        _update_status("git_pull", "success", f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Git 拉取成功 ")
         results.append({"step": "git_pull", "status": "success"})
     except Exception as e:
         err_str = str(e)
@@ -81,7 +82,7 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
             try:
                 logger.info(f"正在执行: {action_name}")
                 cmd_stdout = builder.run_command(cmd)
-                _update_status(action_name, "success", message=action_name +" success",stdout=cmd_stdout )
+                _update_status(action_name, "success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - "+action_name +" success",stdout=cmd_stdout )
                 results.append({
                     "step": action_name,
                     "status": "success",
@@ -100,12 +101,12 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
 
         # 全部成功
         if task_id:
-            update_task(task_id, status="success", message="Hexo 构建全部成功！")
+            update_task(task_id, status="success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Hexo 构建全部成功！")
         return results
 
     except Exception as e:
         if task_id:
-            update_task(task_id, status="failure", message=f"构建失败: {str(e)}")
+            update_task(task_id, status="failure", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 构建失败: {str(e)}")
         raise
 
 
