@@ -5,9 +5,11 @@ FROM python:3.13-slim
 ENV TZ=Asia/Shanghai
 
 # ========== 替换为清华 Debian 源（支持 bookworm）==========
-RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
-    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
-    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+RUN CODENAME=$(grep -oP 'VERSION_CODENAME=\K\w+' /etc/os-release) && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ $CODENAME main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian-security $CODENAME-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ $CODENAME-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+
 
 # 安装依赖
 RUN apt-get update && apt-get install -y \
@@ -65,7 +67,7 @@ HOSTS="${SSH_KNOWN_HOSTS:-github.com gitee.com}"\n\
 ssh-keyscan $HOSTS > /root/.ssh/known_hosts 2>/dev/null\n\
 chmod 644 /root/.ssh/known_hosts\n\
 echo "✅ known_hosts 已生成"\n\
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --log-level info\n\
+exec uvicorn main:app --host 0.0.0.0 --port 3000 --log-level info\n\
 ' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
