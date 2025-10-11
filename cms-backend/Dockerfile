@@ -1,82 +1,71 @@
-# Dockerfile - 放在 cmsBackend/ 目录下
-# 基于 Python 3.11 官方轻量镜像
+#
 FROM python:3.13-slim
 
-# 设置默认时区（可在 docker-compose 中覆盖）
+# 设置时区
 ENV TZ=Asia/Shanghai
 
-# 安装 Git + OpenSSH + ca-certificates
+# ========== 替换为清华 Debian 源（支持 bookworm）==========
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+
+# 安装依赖
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     gnupg \
+    xz-utils \
     openssh-client \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# ========== 安装 Node.js 20.x (LTS) ==========
-# 添加 NodeSource 源并安装 Node.js
-# 添加 NodeSource APT 源（Node.js 20.x）
-RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg \
-    && echo "deb [arch=amd64] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+# ========== 2. 使用国内镜像安装 Node.js 20.x ==========
+# 方案：直接下载 Node.js 二进制包（绕过 NodeSource）
+ENV NODE_VERSION=20.17.0
+ENV NODE_DISTRO=linux-x64
 
-# 安装 Node.js 和 npm
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    && npm install -g npm@latest \
-    && npm install -g hexo-cli \
-    && node --version \
-    && npm --version \
-    && hexo --version \
-    && rm -rf /var/lib/apt/lists/*
+# 从淘宝 NPM 镜像下载 Node.js
+RUN curl -fsSL https://npmmirror.com/mirrors/node/v${NODE_VERSION}/node-v${NODE_VERSION}-${NODE_DISTRO}.tar.xz | tar -xJ -C /usr/local --strip-components=1
 
+# 验证安装
+RUN node --version && npm --version
 
+# ========== 3. 设置 npm 使用国内镜像 ==========
+RUN npm config set registry https://registry.npmmirror.com
 
-# 设置工作目录
+# 安装 Hexo CLI（现在走淘宝镜像，极快）
+RUN npm install -g hexo-cli && hexo --version
+
+# ========== 4. 安装 Python 依赖（你已用清华源，保留）==========
 WORKDIR /app
-
-# 复制依赖文件并安装（利用缓存）
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 复制应用源码
+# 复制代码
 COPY . .
 
 # ========== SSH 配置 ==========
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
 
+# 设置 Git SSH 命令
+ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_rsa -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
 
-
-# 设置 Git 使用指定私钥（可在 docker-compose 中覆盖）
-ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_rsa -o IdentitiesOnly=yes"
-
-# ========== 启动脚本：动态设置时区 + Git 用户 + known_hosts ==========
+# ========== 启动脚本（保持不变）==========
 RUN echo '#!/bin/bash\n\
-\n\
-# ========== 设置时区 ==========\n\
 if [ -n "$TZ" ]; then\n\
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone\n\
     echo "🌍 时区已设置为: $TZ"\n\
 fi\n\
-\n\
-# ========== 设置 Git 用户（从环境变量读取） ==========\n\
 GIT_USER_NAME="${GIT_USER_NAME:-HexoDeployer}"\n\
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-deploy@yourdomain.com}"\n\
 git config --global user.name "$GIT_USER_NAME"\n\
 git config --global user.email "$GIT_USER_EMAIL"\n\
 echo "👤 Git 用户已设置为: $GIT_USER_NAME <$GIT_USER_EMAIL>"\n\
-\n\
-# ========== 生成 known_hosts ==========\n\
 HOSTS="${SSH_KNOWN_HOSTS:-github.com gitee.com}"\n\
-echo "🔐 正在为以下主机生成 known_hosts: $HOSTS"\n\
 ssh-keyscan $HOSTS > /root/.ssh/known_hosts 2>/dev/null\n\
 chmod 644 /root/.ssh/known_hosts\n\
-echo "✅ known_hosts 已生成，共 $(wc -l < /root/.ssh/known_hosts) 行"\n\
-\n\
-# ========== 启动应用 ==========\n\
+echo "✅ known_hosts 已生成"\n\
 exec uvicorn main:app --host 0.0.0.0 --port 8000 --log-level info\n\
-' > /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-# 设置启动脚本
 ENTRYPOINT ["/entrypoint.sh"]

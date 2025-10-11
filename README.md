@@ -90,7 +90,11 @@ py .\run.py
 #### 4.1.3 docker运行使用
 
 ```
+#启动
 docker-compose up --build -d
+
+#关闭
+docker-compose down
 ```
 
 #### 4.1.4 其他问题（可能遇到的）
