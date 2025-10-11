@@ -67,7 +67,7 @@ HOSTS="${SSH_KNOWN_HOSTS:-github.com gitee.com}"\n\
 ssh-keyscan $HOSTS > /root/.ssh/known_hosts 2>/dev/null\n\
 chmod 644 /root/.ssh/known_hosts\n\
 echo "✅ known_hosts 已生成"\n\
-exec uvicorn main:app --host 0.0.0.0 --port 3000 --log-level info\n\
+exec uvicorn main:app --host 0.0.0.0 --port 3001 --log-level info\n\
 ' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
