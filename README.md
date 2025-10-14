@@ -1,3 +1,7 @@
+## 0.关于ME
+项目前端地址: https://cms.brightchen.top
+
+个人博客地址: https://www.brightchen.top
 ## 1.介绍
 一个基于 Vue3 + FastAPI 的无头 CMS，用于通过 Web 界面管理 Hexo 博客的 Markdown 内容，并通过 Git 同步与映射hexo实现自动化发布。
 
