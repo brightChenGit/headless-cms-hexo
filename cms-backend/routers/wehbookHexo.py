@@ -115,7 +115,7 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
             branch=branch,
             message=f"✏️ 部署更新"
         )
-        _update_status("git_commit_and_push", "success", message="✅ 构建产物已成功推送至 Git")
+        _update_status("git_commit_and_push", "success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ✅ 构建产物已成功推送至 Git")
         results.append({
             "step": "git_commit_and_push",
             "status": "success",
