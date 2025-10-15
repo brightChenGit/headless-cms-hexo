@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, HTTPException,Depends,Query
 
 from commons.deployCache import get_task, update_task, create_task, get_last_task_by_triggered_by
 from configs.config import current_repo  # 复用已有的全局仓库配置
-from utils.git_utils import git_pull
+from utils.git_utils import git_pull, git_commit_and_push
 from utils.token_utils import verify_token  # 复用 Token 校验
 from loguru import logger
 from datetime import datetime
@@ -69,6 +69,7 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
         raise BuildInterruptedError(f"Git 拉取失败: {err_str}", [{"step": "git_pull", "status": "error", "error": err_str}])
 
     # === Step 2: Hexo 构建 ===
+    # === Step 2: Hexo 构建 ===
     try:
         builder = HexoBuilder(repo_path=repo_path)
         steps = [
@@ -77,12 +78,11 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
             ("npx hexo generate", ["npx", "hexo", "generate"]),
         ]
 
-        # ✅ 关键修复：将 step_name 改为 action_name（或其他不冲突的名字）
         for action_name, cmd in steps:
             try:
                 logger.info(f"正在执行: {action_name}")
                 cmd_stdout = builder.run_command(cmd)
-                _update_status(action_name, "success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - "+action_name +" success",stdout=cmd_stdout )
+                _update_status(action_name, "success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {action_name} success", stdout=cmd_stdout)
                 results.append({
                     "step": action_name,
                     "status": "success",
@@ -91,7 +91,7 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
                 logger.info(f"✅ 执行成功: {cmd_stdout[:200].strip()}...")
             except Exception as e:
                 err_msg = str(e)
-                _update_status(action_name, "failure",message=action_name+" error", error=err_msg)
+                _update_status(action_name, "failure", message=action_name + " error", error=err_msg)
                 results.append({
                     "step": action_name,
                     "status": "error",
@@ -99,15 +99,43 @@ def run_hexo_build_with_callback(repo_path: str, task_id: str = None, triggered_
                 })
                 raise BuildInterruptedError(err_msg, results)
 
-        # 全部成功
-        if task_id:
-            update_task(task_id, status="success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Hexo 构建全部成功！")
-        return results
+        # ✅ 构建成功，但不 return！继续执行推送
+        logger.info("🎉 Hexo 构建成功，准备推送部署...")
 
     except Exception as e:
         if task_id:
             update_task(task_id, status="failure", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 构建失败: {str(e)}")
-        raise
+        raise  # 重新抛出，中断流程
+
+    # === Step 3: 提交并推送构建结果 ===
+    try:
+        commit_msg = f"Deploy: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        git_commit_and_push(
+            repo_url,
+            branch=branch,
+            message=f"✏️ 部署更新"
+        )
+        _update_status("git_commit_and_push", "success", message="✅ 构建产物已成功推送至 Git")
+        results.append({
+            "step": "git_commit_and_push",
+            "status": "success",
+            "message": "Git 推送成功"
+        })
+    except Exception as e:
+        err_msg = f"Git 提交与推送失败: {str(e)}"
+        _update_status("git_commit_and_push", "failure", error=err_msg)
+        results.append({
+            "step": "git_commit_and_push",
+            "status": "error",
+            "error": err_msg
+        })
+        raise BuildInterruptedError(err_msg, results)
+
+    # ✅ 所有步骤完成，最终返回
+    if task_id:
+        update_task(task_id, status="success", message=f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Hexo 构建并部署成功！")
+    return results
+
 
 
 def run_hexo_build(repo_path: str):

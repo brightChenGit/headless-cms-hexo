@@ -1,8 +1,12 @@
 ## 1.介绍
 一个基于 Vue3 + FastAPI 的无头 CMS，用于通过 Web 界面管理 Hexo 博客的 Markdown 内容，并通过 Git 同步与映射hexo实现自动化发布。
-项目前端地址: https://cms.brightchen.top
+
+github 地址：https://github.com/brightChenGit/headless-cms-hexo
+
+当前项目前端使用地址: https://cms.brightchen.top
 
 个人博客地址: https://www.brightchen.top
+
 ## 2.软件架构
 前端 cms-frontend：vue3+vue-router+ts+vite+element-plus+pinia+bytemd
 
